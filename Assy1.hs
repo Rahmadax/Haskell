@@ -1,4 +1,4 @@
-
+-- module for testing individual functions
 module Assy1 where 
   
   -- Each domino has a left and right integer value
@@ -10,117 +10,134 @@ module Assy1 where
   -- Board contains a list of dominoes in the order they are lined up
   type Board = [Domino]
   
-  
-  -- The set of all dominoes
-  type Set = [Domino]
-  
   -- Either the left or right most domino. 
-  --type End = (left, right)
+  data End = L | R deriving (Eq, Ord)
+  
   
   -- The maximum number of pips on each side of the domino
-
   pips :: Int
   pips = 6
   
-  set :: Set
-  set  = [(a, b)| a <- [0..pips], b <- [a..pips]]
-  
-  board :: Board
-  board = []
-  
-{-
-  -- goesP (True if a domino can be played)
-  -- type definition
-  goesP :: Board -> Hand -> End -> Bool 
-  
-  -- function definition
-  goesP board hand end = 
-	if (end = left) then
-      if elem (fst (head hand)) (fst (head board)) then True
-	  else if elem (snd (head hand)) (fst (head board)) then True
-	  else False
-	else 
-	  if elem (fst (head hand)) (snd (last board)) then True
-      else if elem (snd (head hand)) (snd (last board)) then True
-      else False
-  
+  hand :: Hand
+  hand  = [(a, b)| a <- [0..pips], b <- [a..pips]]
+ 
 
-  -- knockingP (True if no Domino can be played)
+  -- swapDom (Swaps the order of a Domino tuple) // Done!
   -- type definition
-  knockingP :: Hand -> Board -> Bool
-  
+  swapDom :: (a,b) -> (b,a)
   -- function definition
-  knockingP hand board = 
-    if (goesP board hand left = False || goesP board hand right = False) then True
-    else False
+  swapDom (a,b) = (b,a)
   
-  
+ 
+  -- goesP (True if a domino can be played at given end) Done!
+  -- type definition
+  goesP :: Board -> Domino -> End -> Bool
+  -- function definition
+  goesP (hb:tb) domino end 
+    | null (hb:tb) = True
+	| ((fst domino == 0) || ((snd domino = 0)) = True
+    | ((end == L) && ((fb == fst domino) || (fb == snd domino))) = True
+    | ((end == R) && ((lb == fst domino) || (lb == snd domino))) = True
+    | otherwise = False
+    where fb = fst hb         -- First domino on the board
+          lb = snd (last tb)  -- Last domino on the board
+
+
   -- playedP (True if a domino has already been played)  // Done!
   -- type definition
-  playedP :: Domino -> Board -> Bool
-  
+  playedP :: Board -> Domino -> Bool
   -- function definition
-  playedP domino board = 
-    if elem domino board then True
-    else False
+  playedP board domino = elem domino board
+
   
-  
-  
-  -- possP (Returns all the dominos that can be played as Tuple of lists)
+
+
+  -- knockingP (True if no Domino can be played) // Done!
   -- type definition
-  possP :: Hand -> Board -> ([Domino], [Domino])
-  
+  knockingP :: Board -> Hand -> Bool
   -- function definition
-  possP hand board = 
-  if (playedP (head hand) board = True) then 
-    possP (tail hand) board
-  else if (goesP board hand left = True)
-    
-  else if (goesP board hand right = True)
-    
-  else possP (tail hand) board
-    
-  -}
-  
-  -- playDom (Adds a domino to one end of the board) Done?
-  playDom :: Domino -> Board -> End -> Board
-  
-  -- function definition
-  playDom domino board end = 
-    if ((end = left)
-	  if ((snd domino) /= (fst (head board)) then 
-	    swap domino
-		board = domino ++ board
-	  else 
-	    board = domino ++ board
-	else
-	  if ((fst domino) /= (snd (head board))
-        swap domino
-		board ++ domino
-      else 
-        board ++ domino
-  
-  
-  
-  total board :: Board -> Int
-  
-  total = (fst (head board) + snd (last board))
-  
-  
-  
-  -- scoreBoard (Returns the 5s and 3s score of the current board) -- fix scoring
+  knockingP board (h:t)
+    | null h = True
+    | null board = False
+    | (not (checkSide L) && not(checkSide R)) = knockingP board t
+    | otherwise = True
+	where checkSide = goesP board h 
+ 
+  {-
+  -- playDom plays the current domino on the board and flips the tuple if needed. Done?
   -- type definition
-  scoreBoard :: Board -> Int
-  
+  playDom :: Domino -> Board -> End -> Maybe Board
   -- function definition
-  scoreBoard board = 
-    if ( (total board) mod 3 == 0) || (total board)mod 5 == 0) then (total board)
-	else 0
+  playDom domino board end 
+    | null board = domino:board
+    | checkSide L = just leftPlay board domino 
+    | checkSide R = just rightPlay board domino
+    | otherwise = Nothing
+	where checkSide = goesP board domino
+
+
+     -- playDom Aux functions
+  leftPlay :: Board -> Domino -> Board
+  leftPlay board domino
+    | (f == fst domino) = (swapDom domino):board
+    | (f == snd domino) = domino:board
+	where f = fst (head board)
+
+
+  rightPlay :: Board -> Domino -> Board
+  rightPlay board domino
+    | l == fst domino = board ++ [(swapDom domino)]
+    | l == snd domino = board ++ [domino]
+	where l = snd (last board)
 
 	
-	{-
-  
-  -- scoreN (Returns the dominos that can score)
-  scoreN :: Board -> Int -> [Domino]
-  
--}
+	
+	
+	
+	-}
+	
+	
+  -- type definition
+  scoreBoard :: Board -> Int
+  -- function definition
+  scoreBoard (h:t)
+    | null h = 0
+    | (((total `mod` 3) == 0 ) || ((total `mod` 5) == 0 )) = getScore total scores
+    | otherwise = 0	
+	where 
+	  scores = [(3,1),(5,1),(6,2),(9,3),(10,2),(12,4),(15,8),(18,6),(20,4)]
+	  total = getTotal board
+
+  -- scoreBoard Aux function
+  -- type definition
+  getTotal :: board -> Int
+  -- function definition
+  getTotal (h:t)
+    | ((fh == sh) && (ft == st)) = (fh*2 + st*2)
+    | (fh == sh) = (fh*2 + st)
+    | (ft == st) = (fh + st*2)
+    | otherwise = (fh + st)
+	where fh = fst h
+	      sh = snd h
+          ft = fst (last t)
+          st = snd (last t)
+
+
+  -- type definition
+  getScore :: Int -> [(Int, Int)] -> Int
+  --function definition
+  getScore total (h:t) 
+    | (fst h == total) = snd h
+    | otherwise = getScore total t 
+	
+	
+
+    
+  possPlays :: Board -> Hand -> ([Domino],[Domino]) 
+  possPlays board (h:t)
+	| goesP board domino L = (h:(fst possiblePlays)) + possPlays board t
+	| goesP board domino R = ((snd possiblePlays)++(h)) + possPlays board t
+	| otherwise = possPlays board t
+	where possiblePlays = ([],[])
+
+-}	

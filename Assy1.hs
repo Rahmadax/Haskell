@@ -3,21 +3,23 @@ module Assy1 where
   
   -- Each domino has a left and right integer value
   type Domino = (Int, Int)
+  
   -- Hand contains a list of dominoes
   type Hand = [Domino]
+  
   -- Board contains a list of dominoes in the order they are lined up
   type Board = [Domino]
-  -- The complete set of dominoes (For later in the assignment)
-  type Set = [Domino]
-  -- Either the left or right of the board
+  
+  -- Either the left or right most domino. 
   data End = L | R deriving (Eq, Ord)
+  
   
   -- The maximum number of pips on each side of the domino
   pips :: Int
   pips = 6
   
-  set :: Set
-  set  = [(a, b)| a <- [0..pips], b <- [a..pips]]
+  hand :: Hand
+  hand  = [(a, b)| a <- [0..pips], b <- [a..pips]]
  
 
   -- swapDom (Swaps the order of a Domino tuple) // Done!
@@ -31,9 +33,9 @@ module Assy1 where
   -- type definition
   goesP :: Board -> Domino -> End -> Bool
   -- function definition
-  goesP [] _ _ = True
   goesP (hb:tb) domino end 
-	| ((fst domino == 0) || (snd domino = 0)) = True
+    | null (hb:tb) = True
+	| ((fst domino == 0) || ((snd domino = 0)) = True
     | ((end == L) && ((fb == fst domino) || (fb == snd domino))) = True
     | ((end == R) && ((lb == fst domino) || (lb == snd domino))) = True
     | otherwise = False
@@ -48,6 +50,7 @@ module Assy1 where
   playedP board domino = elem domino board
 
   
+
 
   -- knockingP (True if no Domino can be played) // Done!
   -- type definition
@@ -71,25 +74,28 @@ module Assy1 where
     | checkSide R = just rightPlay board domino
     | otherwise = Nothing
 	where checkSide = goesP board domino
+
+
      -- playDom Aux functions
-     
   leftPlay :: Board -> Domino -> Board
   leftPlay board domino
-    | (fst domino == 0) = ((swapDom domino):board)
-    | (fb == 0) = domino:board 
-    | (fb == fst domino) || (fst domino == 0)) = (swapDom domino):board
-    | (fb == snd domino) || (fst domino == 0)) = domino:board
-	where fb = fst (head board)
-    
+    | (f == fst domino) = (swapDom domino):board
+    | (f == snd domino) = domino:board
+	where f = fst (head board)
+
+
   rightPlay :: Board -> Domino -> Board
   rightPlay board domino
-    | lb == fst domino = board ++ [(swapDom domino)]
-    | lb == snd domino = board ++ [domino]
-	where lb = snd (last board)
-	
-	
-	
+    | l == fst domino = board ++ [(swapDom domino)]
+    | l == snd domino = board ++ [domino]
+	where l = snd (last board)
 
+	
+	
+	
+	
+	-}
+	
 	
   -- type definition
   scoreBoard :: Board -> Int
@@ -132,4 +138,6 @@ module Assy1 where
 	| goesP board domino L = (h:(fst possiblePlays)) + possPlays board t
 	| goesP board domino R = ((snd possiblePlays)++(h)) + possPlays board t
 	| otherwise = possPlays board t
--}
+	where possiblePlays = ([],[])
+
+-}	

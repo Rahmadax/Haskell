@@ -32,14 +32,15 @@ module Test where
   -- type definition
   goesP :: Board -> Domino -> End -> Bool
   -- function definition
+  goesP [] _ _ = True
   goesP (hb:tb) domino end 
-    | null (hb:tb) = True
-	| ((fst domino == 0) || (snd domino == 0)) = True
+    | ((fst domino == 0) || (snd domino == 0)) = True
+    | ((fb == 0) || (lb == 0)) = True
     | ((end == L) && ((fb == fst domino) || (fb == snd domino))) = True
     | ((end == R) && ((lb == fst domino) || (lb == snd domino))) = True
     | otherwise = False
-    where fb = fst hb         -- First domino on the board
-          lb = snd (last tb)  -- Last domino on the board
+    where fb = fst hb         -- First domino on the board's left pips
+          lb = snd (last tb)  -- Last domino on the board's right pips
  
  
  
@@ -47,23 +48,21 @@ module Test where
   -- type definition
   playDom :: Board -> Domino -> End -> Maybe Board
   -- function definition
-  playDom board domino end 
-    | ((checkSide L) || (checkSide R)) = Just (if (end == L)
-	                                           then leftPlay board domino 
-											    else rightPlay board domino
-												)
-    | otherwise = Nothing
-	where checkSide = goesP board domino
-     -- playDom Aux functions
-	 
-  leftPlay :: Board -> Domino -> Board
-  leftPlay board domino
-    | (fst fb == fst domino) = (swapDom domino):board
-    | (fst fb == snd domino) = domino:board
-	where fb = (head board)
-	
-  rightPlay :: Board -> Domino -> Board
-  rightPlay board domino
-    |snd lb == fst domino = board ++ [(swapDom domino)]
-    |snd lb == snd domino = board ++ [domino]
-	where lb = (last board)
+  playDom board domino end
+    | not(checkSide end) = Nothing
+    | otherwise = Just (placeDom board domino end)
+    where checkSide = goesP board domino
+  
+  
+  placeDom :: Board -> Domino -> End -> Board
+  placeDom [] domino _ = [domino]
+  placeDom board domino L
+    | (fst fb == 0) = domino:board
+    | ((fst fb == fst domino) || (fst domino == 0)) = (swapDom domino):board
+    | ((fst fb == snd domino) || (snd domino == 0)) = domino:board
+    where fb = (head board)
+  placeDom board domino R
+    |( snd lb == 0) = board ++ [domino]
+    |((snd lb == fst domino) || (snd domino == 0)) = board ++ [(swapDom domino)]
+    |((snd lb == snd domino) || (fst domino == 0)) = board ++ [domino]
+    where lb = (last board)

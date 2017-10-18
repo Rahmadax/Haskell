@@ -10,6 +10,7 @@ module Assignment1 where
   type Domino = (Int, Int)
   -- Hand contains a list of dominoes
   type Hand = [Domino]
+  -- Set contains a list of dominoes
   type Set = [Domino]
   -- Board contains a list of dominoes in the order they are lined up
   type Board = [Domino]
@@ -17,7 +18,7 @@ module Assignment1 where
   data End = L | R deriving (Eq)
   
   ------------------------------------------------------------------------
-  -- Initialisation
+  -- A list of all dominoes
   set :: Set 
   set = [(a, b)| a <- [0..pips], b <- [a..pips]]
   -- The maximum number of pips on each side of the domino
@@ -39,10 +40,11 @@ module Assignment1 where
   goesP :: Board -> Domino -> End -> Bool
   -- function definition
   goesP [] _ _ = True
-  goesP board (a,b) L = (leftPips == a) || (leftPips == b)
-    where leftPips = fst (head board) -- first domino's left pips
-  goesP board (a,b) R = (rightPips == a) || (rightPips == b)
-    where rightPips = snd (last board) -- last domino's right pips
+  goesP board (a,b) L = (leftP == a || leftP == b) && not(playedP board (a,b))
+    where leftP = fst (head board) -- first domino's left pips
+  goesP board (a,b) R = (rightP == a || rightP == b) && not(playedP board (a,b))
+    where rightP = snd (last board) -- last domino's right pips
+  
 
   ------------------------------------------------------------------------
   -- playedP function 
@@ -58,15 +60,13 @@ module Assignment1 where
   -- type definition
   knockingP :: Board -> Hand -> Bool
   -- function definition
-  knockingP [] _ = False
   knockingP _ [] = True
-  knockingP board (h:t) 
-    | not (checkSide L) && not(checkSide R) = knockingP board t
-    | otherwise = False
-    where checkSide = goesP board h 
+  knockingP board (hh:th) 
+    | (goesP board hh L) || (goesP board hh R) = False
+    | otherwise = knockingP board th
  
   -------------------------------------------------------------------------   
-  -- playDom function and Aux placeDom
+  -- playDom function
   -- Returns the board after a given domino has been played at a given end 
   -- Returns nothing if impossible
   -- type definition
@@ -74,21 +74,16 @@ module Assignment1 where
   -- function definition
   playDom board domino end
     | not(goesP board domino end) = Nothing
-    | otherwise = Just (placeDom board domino end)
-  
-  -- adds the given domino to the given end. Returns updated board
-  -- type definition
-  placeDom :: Board -> Domino -> End -> Board
-  -- function definition
-  placeDom [] domino _ = [domino]
-  placeDom board domino L
-    | (fst fb == fst domino) = (swapDom domino):board
-    | (fst fb == snd domino) = domino:board
-    where fb = (head board)
-  placeDom board domino R
-    |(snd lb == fst domino) = board ++ [domino]
-    |(snd lb == snd domino) = board ++ [swapDom domino]
-    where lb = (last board)
+    | null board = Just [domino]
+    | (end == L) = Just (if leftP == fst domino 
+                          then (swapDom domino):board
+                            else domino:board)
+
+    | (end == R) = Just (if rightP == fst domino 
+                          then board ++ [domino]
+                            else  board ++ [swapDom domino])
+    where leftP = fst (head board)
+          rightP = snd (last board)
  
   ------------------------------------------------------------------------
   -- scoreBoard function and Aux getTotal and getScore
@@ -139,6 +134,7 @@ module Assignment1 where
     (filter (\domino -> goesP board domino L) hand, -- Left end
     filter (\domino -> goesP board domino R) hand)  -- Right end
 
+{-
   ------------------------------------------------------------------------
   -- scoreN function
   -- Takes a Board and an integer n, returns all dominoes that score n
@@ -149,12 +145,12 @@ module Assignment1 where
     (filter (\domino -> goesP board domino L) hand, -- Left end
     filter (\domino -> goesP board domino R) hand)  -- Right end  
   
-  goesP && not(playedP ) && (scoreBoard == target)
+  goesP && (scoreBoard == target)
   
   
   
   
-  
+  -}
   
   
   

@@ -26,6 +26,7 @@ module Assignment1 where
   pips = 6
 
   ------------------------------------------------------------------------
+  -- Utility functions
   -- swapDom function
   -- Swaps the order of a Domino tuple
   -- type definition
@@ -33,9 +34,17 @@ module Assignment1 where
   -- function definition
   swapDom (a,b) = (b,a)
   
+  resMaybe :: (Maybe a) -> a
+  resMaybe (Just x) = x
+ 
+  isJust :: (Maybe a) -> Bool
+  isJust (Just _) = True
+  isJust Nothing = False
+  
   ------------------------------------------------------------------------
   -- goesP function 
-  -- True if a domino can be played at a given end.
+  -- True if a domino can be played at a given end. 
+  -- Also checks if a domino has already been played
   -- type definition
   goesP :: Board -> Domino -> End -> Bool
   -- function definition
@@ -44,8 +53,7 @@ module Assignment1 where
     where leftP = fst (head board) -- first domino's left pips
   goesP board (a,b) R = (rightP == a || rightP == b) && not(playedP board (a,b))
     where rightP = snd (last board) -- last domino's right pips
-  
-
+ 
   ------------------------------------------------------------------------
   -- playedP function 
   -- True if a domino has been played
@@ -134,24 +142,32 @@ module Assignment1 where
     (filter (\domino -> goesP board domino L) hand, -- Left end
     filter (\domino -> goesP board domino R) hand)  -- Right end
 
-{-
   ------------------------------------------------------------------------
   -- scoreN function
   -- Takes a Board and an integer n, returns all dominoes that score n
   
   scoreN :: Board -> Int -> ([Domino],[Domino])
+  scoreN board target = scoreNA board target set ([],[])
   
-  scoreN board target = s
-    (filter (\domino -> goesP board domino L) hand, -- Left end
-    filter (\domino -> goesP board domino R) hand)  -- Right end  
+  scoreNA :: Board -> Int -> Set -> ([Domino],[Domino]) -> ([Domino],[Domino])
+  scoreNA _ _ [] scoringDoms = scoringDoms
+  scoreNA board target (sh:st) scoringDoms 
+   | (hypoPlay L == Nothing) && (hypoPlay R == Nothing) = scoreNA board target st ((fst scoringDoms), (snd scoringDoms))
   
-  goesP && (scoreBoard == target)
+   | (isJust( hypoPlay L )) && (isJust( hypoPlay R ))= 
+     if (scoreBoard (resMaybe( hypoPlay L )) == target && scoreBoard (resMaybe( hypoPlay R )) == target) then 
+       scoreNA board target st (sh:(fst scoringDoms), sh:(snd scoringDoms))
+	     else scoreNA board target st ((fst scoringDoms), (snd scoringDoms))
+
+   | (isJust( hypoPlay L )) = 
+     if ((scoreBoard (resMaybe (hypoPlay L))) == target) then
+       scoreNA board target st (sh:(fst scoringDoms), (snd scoringDoms))
+	     else scoreNA board target st ((fst scoringDoms), (snd scoringDoms))
   
+   | (isJust( hypoPlay R )) = 
+     if ((scoreBoard (resMaybe (hypoPlay R) )) == target) then 
+       scoreNA board target st ((fst scoringDoms), sh:(snd scoringDoms))
+	     else scoreNA board target st ((fst scoringDoms), (snd scoringDoms))
   
-  
-  
-  -}
-  
-  
-  
-  
+   | otherwise = scoreNA board target st ((fst scoringDoms), (snd scoringDoms))
+   where hypoPlay = playDom board sh 

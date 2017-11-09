@@ -10,20 +10,27 @@ module Assignment2 where
   import MergeSort
   import Assignment1
   
-  type Player = (DomsPlayer, Hand, Int)
+  type Player = (DomsPlayer, Hand, Int) 
   type DomsPlayer = Hand -> Board -> (Domino,End)
   
   maxDs :: Int  -- Total number of Dominoes in the game
   maxDs = 28
   dsPHand :: Int -- Number of Domino per hand in 2 player game
   dsPHand = 9
+  
+  -- Player Utility Functions
+  getDP :: Player -> DomsPlayer 
+  getDP (dp,_,_) = dp
+  getH :: Player -> Hand 
+  getH (_,hand,_) = hand
+  getS :: Player -> Int 
+  getS (_,_,score) = score
 
   -- generates maxDoms number of random numbers, zips with domino set.
   -- mergesorts into new order, unzips pair and returns random order set
   shuffleDoms :: Int -> [Domino]
   shuffleDoms seed = (map fst (mergesort(\(_,n1)(_,n2)->n1<n2)(zip set raNs)))
     where raNs = take maxDs(randoms(mkStdGen seed)::[Int]) -- Random number generator
-
 
   simplePlayer :: DomsPlayer
   simplePlayer board hand = simplePlayerA (possPlays board hand)
@@ -42,23 +49,35 @@ module Assignment2 where
   sDI :: Domino -> [Domino] -> Int -> Bool
   sDI d rs tar = let index = resMaybe(elemIndex d rs) in
     (index `mod` 2 == tar) && (index < (dsPHand*2)) 
-  
-  
-  playDomsRound :: Player -> Player -> Int -> (Int, Int)
-  playDomsRound p1 p2 seed = playDomsLobby (newHand p1 rsf) (newHand p2 rss) ([],1)
-    where (rsf,rss) = sDMakeHands (shuffleDoms seed)
+
 
   newHand :: Player -> [Domino] -> Player 
-  newHand (dp,_,score) newHand = (dp, newHand, score)
-
-  playDomsLobby :: Player -> Player -> (Board, Int) -> (Int, Int)
-  playDomsLobby (dp1,p1h,p1s) (dp2,p2h,p2s) (b,_) 
-    | (knockingP b p1h) && (knockingP b p2h) = (p1s,p2s)
-    | knockingP b p1h = playDomsLobby (dp1,p1h,p1s) (dp2,p2h,p2s) (newTurn (dp2 b p2h) (b,2))
-  playDomsLobby (dp1,p1h,p1s) p2 (b,1) = playDomsLobby (dp1,p1h,p1s) p2 (newTurn (dp1 b p1h) (b,1))
-  playDomsLobby p1 (dp2,p2h,p2s) (b,2) = playDomsLobby p1 (dp2,p2h,p2s) (newTurn (dp2 b p2h) (b,2))
+  newHand (dp,_,score) nHand = (dp, nHand, score)	
   
-  newTurn :: (Domino,End) -> (Board,Int) -> (Board, Int)
-  newTurn (d,e) (b,1) = (resMaybe(playDom b d e), 2)
-  newTurn (d,e) (b,2) = (resMaybe(playDom b d e), 1)
+  playDomsRound :: Player -> Player -> Int -> (Int, Int)
+  playDomsRound p1 p2 seed = playDomsLobby (newHand p1 rsf) (newHand p2 rss) [] 1
+    where (rsf,rss) = sDMakeHands (shuffleDoms seed)
+
+	
+  playDomsLobby :: Player -> Player -> Board -> Int -> (Int, Int)
+  
+  playDomsLobby (dp1,hand1,score1) (dp2,hand2,score2) b _
+    | knockingP b hand1 && knockingP b hand2 = (score1,score2)
+	| knockingP b hand1 = playDomsLobby (dp1,hand1,score1) (dp2,hand2,nScore) nBoard 1
+	where (nBoard, nScore) = nextPlay (dp2,hand2,score2) b
+	
+  playDomsLobby (dp,hand,score) p2 b 1 = playDomsLobby (dp,hand,nScore) p2 nBoard 2
+    where (nBoard, nScore) = nextPlay (dp,hand,score) b
+	
+  playDomsLobby p1 (dp,hand,score) b 2 = playDomsLobby p1 (dp,hand,nScore) nBoard 1
+    where (nBoard, nScore) = nextPlay (dp,hand,score) b
+  
+  
+  nextPlay :: Player -> Board -> (Board, Int)
+  nextPlay (dp,hand,score) b = (newb, (score+scoreBoard newb))
+    where newb = (nextPlayDom b (dp b hand))
+  
+  nextPlayDom :: Board -> (Domino, End) -> Board
+  nextPlayDom b (d,e) = resMaybe (playDom b d e)
+  
   

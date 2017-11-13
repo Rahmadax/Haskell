@@ -121,7 +121,7 @@ module Assignment1 where
   possPlays [] hand = (hand, hand)
   possPlays board hand = 
     (filter (\domino -> goesP board domino L) hand, -- Left end
-    filter (\domino -> goesP board domino R) hand)  -- Right efile:///C:/Users/Ollie/AppData/Local/Temp/Assignment1.hs.hsnd
+    filter (\domino -> goesP board domino R) hand)  -- Right end
 
   ------------------------------------------------------------------------
   -- scoreN function

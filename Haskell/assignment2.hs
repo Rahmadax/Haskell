@@ -17,14 +17,6 @@ module Assignment2 where
   maxDs = 28
   dsPHand :: Int -- Number of Domino per hand in 2 player game
   dsPHand = 9
-  
-  -- Player Utility Functions
-  getDP :: Player -> DomsPlayer 
-  getDP (dp,_,_) = dp
-  getH :: Player -> Hand 
-  getH (_,hand,_) = hand
-  getS :: Player -> Int 
-  getS (_,_,score) = score
 
   -- generates maxDoms number of random numbers, zips with domino set.
   -- mergesorts into new order, unzips pair and returns random order set
@@ -52,32 +44,39 @@ module Assignment2 where
 
 
   newHand :: Player -> [Domino] -> Player 
-  newHand (dp,_,score) nHand = (dp, nHand, score)	
+  newHand (dp,_,score) nHand = (dp, nHand, score)
   
-  playDomsRound :: Player -> Player -> Int -> (Int, Int)
+  playDomsRound :: Player -> Player -> Int -> (Board, (Int,Int))
   playDomsRound p1 p2 seed = playDomsLobby (newHand p1 rsf) (newHand p2 rss) [] 1
     where (rsf,rss) = sDMakeHands (shuffleDoms seed)
 
-	
-  playDomsLobby :: Player -> Player -> Board -> Int -> (Int, Int)
+
+  playDomsLobby :: Player -> Player -> Board -> Int -> (Board, (Int,Int))
   
   playDomsLobby (dp1,hand1,score1) (dp2,hand2,score2) b _
-    | knockingP b hand1 && knockingP b hand2 = (score1,score2)
-	| knockingP b hand1 = playDomsLobby (dp1,hand1,score1) (dp2,hand2,nScore) nBoard 1
-	where (nBoard, nScore) = nextPlay (dp2,hand2,score2) b
-	
-  playDomsLobby (dp,hand,score) p2 b 1 = playDomsLobby (dp,hand,nScore) p2 nBoard 2
-    where (nBoard, nScore) = nextPlay (dp,hand,score) b
-	
-  playDomsLobby p1 (dp,hand,score) b 2 = playDomsLobby p1 (dp,hand,nScore) nBoard 1
-    where (nBoard, nScore) = nextPlay (dp,hand,score) b
+    | knockingP b hand1 && knockingP b hand2 = (b, (score1, score2))
+    | knockingP b hand1 = playDomsLobby (dp1,hand1,score1) (dp2,hand2,nScore) nBoard 2
+    where (nBoard, nScore) = nextPlay (dp2,hand2,score2) b
+
+
+
+
+
+  playDomsLobby (dp1,hand1,score1) p2 b 1 = playDomsLobby (dp1,hand1,nScore) p2 nBoard 2
+    where (nBoard, nScore) = nextPlay (dp1,hand1,score1) b
+  playDomsLobby p1 (dp2,hand2,score2) b 2 = playDomsLobby p1 (dp2,hand2,nScore) nBoard 1
+    where (nBoard, nScore) = nextPlay (dp2,hand2,score2) b
+  
+  
+  
+  
+  
   
   
   nextPlay :: Player -> Board -> (Board, Int)
-  nextPlay (dp,hand,score) b = (newb, (score+scoreBoard newb))
-    where newb = (nextPlayDom b (dp b hand))
+  nextPlay (dp,hand,score) b = (nBoard, (score+scoreBoard nBoard))
+    where nBoard = (nextPlayDom b (dp b hand))
   
   nextPlayDom :: Board -> (Domino, End) -> Board
   nextPlayDom b (d,e) = resMaybe (playDom b d e)
-  
   

@@ -17,14 +17,11 @@ module Assignment2 where
    rs - random set of dominos
    raNs - list of random numbers
    seed - Seed for the RNG
-   tar - taget index 
-   ind - the place of an element in a list
    maxDs - Total number of Dominoes in the game
    dsPH - Number of Domino per hand in 2 player game
-   a / b - temporary variable names
+   x / y - temporary variable names
    dp - general name for a domsPlayer functions
    dp1 / dp2 - name for either player 1 or 2's domsPlayer function
-   rsf / rss - either first or second element of the randomly generated hands tuple
    nBoard - the newly generated board after a domino has been played
    nScore - the new score after the new boared score has been added to the old score.-}
    
@@ -39,43 +36,49 @@ module Assignment2 where
   maxDs = 28
   dsPH :: Int -- Number of Domino per hand in 2 player game
   dsPH = 9
-  -- Test Player
-  testPlayerSP :: Player
-  testPlayerSP = (simplePlayer, [], 0)
   
   -- Plays the first possible domino (Left check first, then Right)
-  simplePlayer :: DomsPlayer
+  spPlayer :: Player
+  spPlayer = (simplePlayer, [], 0)
+  simplePlayer :: DomsPlayer 
   simplePlayer h b = simplePlayerA (possPlays b h) -- checks poss plays (A1)
   simplePlayerA :: ([Domino],[Domino]) -> (Domino, End)
-  simplePlayerA ((a:_),_) = (a, L)
-  simplePlayerA (_,(b:_)) = (b, R)
-
+  simplePlayerA (x:_,_) = (x, L)
+  simplePlayerA (_,y:_) = (y, R)
+  
+  -- Plays highest scoring move. Filters ds that are both playable and scoring.
+  -- Checks all for values in passed [Int] starting at 8 and counting down
+  -- This works but a bug exists in it that I haven't been able to fix. 
+  {-
+  hsPlayer :: Player
+  hsPlayer = (hsdPlayer, [], 0)
+  hsdPlayer :: DomsPlayer
+  hsdPlayer h b = hsdPlayerA (possPlays b h) b [8,6,4,3,2,1,0]
+  hsdPlayerA :: ([Domino],[Domino]) -> Board -> [Int] -> (Domino, End)
+  hsdPlayerA (pDsLeft,pDsRight) b (psTarget:psTail) 
+    | not (null (hsdChecker pDsLeft scoreNLeft))  = (head (hsdChecker pDsLeft scoreNLeft), L)
+    | not (null (hsdChecker pDsRight scoreNRight)) = (head (hsdChecker pDsRight scoreNRight), R)
+    | otherwise = hsdPlayerA (pDsLeft,pDsRight) b psTail
+    where (scoreNLeft, scoreNRight) = scoreN b psTarget
+  hsdChecker :: [Domino] -> [Domino] -> [Domino]
+  hsdChecker playableDs scoreNds = 
+    (filter (\d -> ((elem d scoreNds)||(elem (swapDom d) scoreNds)) )playableDs)
+  -}
+ 
+  -- Takes a two players and a seed. Generates and assigns hand, calls game handler.
+  playDomsRound :: Player -> Player -> Int -> (Int,Int)
+  playDomsRound (dp1,_,s1) (dp2,_,s2) seed = playDomsHandler (dp1,(take dsPH rs),s1)(dp2,(take dsPH srs),s2) [] 1
+    where rs = (shuffleDoms seed) 
+          srs = drop dsPH rs
+  
   -- generates maxDoms number of random numbers, zips with domino set.
   -- mergesorts into new order, unzips pair and returns random order set
   shuffleDoms :: Int -> [Domino]
   shuffleDoms seed = (map fst (mergesort(\(_,n1)(_,n2)->n1<n2)(zip set raNs)))
-    where raNs = take maxDs(randoms(mkStdGen seed)::[Int]) -- Random number generator
-  
-  
-  -- Takes a two players and a seed. Generates and assigns hand, calls game handler.
-  playDomsRound :: Player -> Player -> Int -> (Board, (Int,Int))
-  playDomsRound p1 p2 seed = playDomsHandler (newHand p1 rsf) (newHand p2 rss) [] 1
-    where (rsf,rss) = sDMakeHands (shuffleDoms seed)
-	
-  -- Takes the random domino set and filters every other domino into each hand
-  -- Returns both hands as a tuple
-  sDMakeHands :: [Domino] -> ([Domino],[Domino])
-  sDMakeHands rs = (filter (\d -> sDI d rs 0) rs, filter (\d -> sDI d rs 1) rs)
-  
-  -- Indexer, checks modulus of index and if index < 2*dsPH
-  sDI :: Domino -> [Domino] -> Int -> Bool
-  sDI d rs tar = let ind = resMaybe(elemIndex d rs) in (ind `mod` 2 == tar) && (ind < (dsPH*2)) 
-  
-  -- Assigns a newly generated hand to a given player
-  newHand :: Player -> [Domino] -> Player 
-  newHand (dp,_,score) nHand = (dp, nHand, score)
+    where raNs = take maxDs(randoms(mkStdGen seed)::[Int]) -- Random number generator 
 
   -- Game handler, checks if a player is knocking, if no, calls function to play a move.
+  -- its possible to avoid repeated wheres but the code becomes messier because of the changes.
   playDomsHandler :: Player -> Player -> Board -> Int -> (Board, (Int,Int))
   playDomsHandler (dp1,h1,s1) (dp2,h2,s2) b _
     -- players 1 and 2 both knocking, game ends
@@ -87,7 +90,6 @@ module Assignment2 where
     where 
       (nBoard1, nScore1) = nextPlay (dp1,h1,s1) b
       (nBoard2, nScore2) = nextPlay (dp2,h2,s2) b
-
   -- if no knocking, the called player (passed Int) takes their turn
   -- player 1 called
   playDomsHandler (dp1,h1,s1) p2 b 1 = playDomsHandler (dp1,h1,nScore) p2 nBoard 2
@@ -99,44 +101,11 @@ module Assignment2 where
   -- takes a player and a board, returns the new board and their new score
   nextPlay :: Player -> Board -> (Board, Int)
   nextPlay (dp,h,s) b = (nBoard, (s+scoreBoard nBoard))
-    where nBoard = (nextPlayDom (dp h b) b) 
+    where (d,e) = dp h b
+          nBoard = resMaybe (playDom b d e) 
+
   
-  -- plays the given domino at a given end, resolves maybe and returns new board
-  nextPlayDom :: (Domino, End) -> Board -> Board
-  nextPlayDom (d,e) b = resMaybe (playDom b d e)
-  
-  -- Assignment 1 / Merge sort below
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   
   
   

@@ -23,7 +23,11 @@ module Assignment2 where
    dp - general name for a domsPlayer functions
    dp1 / dp2 - name for either player 1 or 2's domsPlayer function
    nBoard - the newly generated board after a domino has been played
-   nScore - the new score after the new boared score has been added to the old score.-}
+   nScore - the new score after the new boared score has been added to the old score.
+   pDsLeft / pDsRight - possible plays on the left / right
+   psTarget / psTail - the head or tail of the possible score list 
+   scoreNds - Dominos that score some given N value
+   -}
    
   type Player = (DomsPlayer, Hand, Int) 
   type DomsPlayer = Hand -> Board -> (Domino,End)
@@ -48,7 +52,6 @@ module Assignment2 where
   
   -- Plays highest scoring move. Filters ds that are both playable and scoring.
   -- Checks all for values in passed [Int] starting at 8 and counting down
-  {- This works but I'm not happy with the implementation
   hsPlayer :: Player
   hsPlayer = (hsdPlayer, [], 0)
   hsdPlayer :: DomsPlayer
@@ -60,8 +63,8 @@ module Assignment2 where
     | otherwise = hsdPlayerA (pDsLeft,pDsRight) b psTail
     where (scoreNLeft, scoreNRight) = scoreN b psTarget
   hsdChecker :: [Domino] -> [Domino] -> [Domino]
-  hsdChecker playableDs scoreNds = (filter (\d -> ((elem d scoreNds)||(elem (swapDom d) scoreNds)) )playableDs)
-  -}
+  hsdChecker playableDs scoreNds = (filter (\d -> ((elem d scoreNds)||(elem (swapDom d) scoreNds)))playableDs)
+ 
  
   -- Takes a two players and a seed. Generates and assigns hand, calls game handler.
   playDomsRound :: Player -> Player -> Int -> (Int,Int)
@@ -77,10 +80,11 @@ module Assignment2 where
 
   -- Game handler, checks if a player is knocking, if no, calls function to play a move.
   -- its possible to avoid repeated wheres but the code becomes messier because of the changes.
-  playDomsHandler :: Player -> Player -> Board -> Int -> (Board, (Int,Int))
+  -- This function does not edit hands, i found it easier to maintain and shorter by comparing
+  playDomsHandler :: Player -> Player -> Board -> Int -> (Int,Int)
   playDomsHandler (dp1,h1,s1) (dp2,h2,s2) b _
     -- players 1 and 2 both knocking, game ends
-    | knockingP b h1 && knockingP b h2 = (b, (s1, s2))
+    | knockingP b h1 && knockingP b h2 = (s1, s2)
     -- just player 1 knocking, player 2 makes a move
     | knockingP b h1 = playDomsHandler (dp1,h1,s1) (dp2,h2,nScore2) nBoard2 1
     -- just player 2 knocking, player 1 makes a move
@@ -255,6 +259,8 @@ module Assignment2 where
          reRun = scoreNA board target st -- Short hand to save space
 
 
+  --merge
+
   merge :: Ord a=> (a->a -> Bool)->[a]->[a] -> [a]
   
   merge _ [] lis2 = lis2
@@ -291,4 +297,5 @@ module Assignment2 where
 
   -- general case - merge first two lists, cons to remainder
 
-mergesortpass compfn (lis1:(lis2:rest)) =(merge compfn lis1 lis2): mergesortpass compfn rest
+  mergesortpass compfn (lis1:(lis2:rest)) =(merge compfn lis1 lis2): mergesortpass compfn rest
+  
